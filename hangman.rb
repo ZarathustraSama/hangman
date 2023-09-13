@@ -58,8 +58,8 @@ class Hangman
     check_guess&.each { |position| @word[position] = new_guess }
   end
 
-  def print_word(word)
-    word.each do |letter|
+  def print_word
+    @word.each do |letter|
       if letter.nil?
         print '_ '
       else
@@ -89,12 +89,12 @@ puts("Preparations are completed! Let\'s begin!\n")
 loop do
   puts("Remaining guesses: #{game.turns}\n\n")
 
-  game.print_word(game.word)
+  game.print_word
 
   game.fill_blanks
 
   if game.game_over?(game.word)
-    game.print_word(game.word).capitalize
+    game.print_word.capitalize
     return puts "\nCongratulations! You won!"
   end
 
