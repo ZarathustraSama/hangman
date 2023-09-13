@@ -96,7 +96,7 @@ loop do
   game.fill_blanks
 
   if game.game_over?(game.word)
-    game.print_word.capitalize
+    game.print_word.join('').capitalize
     return puts "\nCongratulations! You won!"
   end
 
