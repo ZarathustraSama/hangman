@@ -2,13 +2,15 @@
 
 require 'pry-byebug'
 
-# The main game
+# The game logic
 class Hangman
-  attr_accessor :dict, :secret_word, :turns, :guesses
+  attr_accessor :dict, :secret_word, :turns, :guesses, :word
 
-  def initialize(secret_word, turns = 20)
+  def initialize(secret_word, turns = 20, guesses = [], word = [])
     @secret_word = secret_word
     @turns = turns
+    @guesses = guesses
+    @word = word
   end
 
   def advance_turn
@@ -19,53 +21,8 @@ class Hangman
     guess_word == @secret_word
   end
 
-  def check_guess(guess)
-    secret_word = @secret_word.clone
-    if secret_word.include?(guess)
-      positions = []
-      while secret_word.include?(guess)
-        positions << secret_word.index(guess)
-        secret_word[secret_word.index(guess)] = nil
-      end
-      return positions
-    end
-    nil
-  end
-end
-
-# Useful function(s) for the interaction between objects
-class Utility
-  def initialize(dict_path)
-    @dict_list = load_dict(dict_path)
-    @secret_word = choose_secret_word(@dict_list)
-  end
-
-  def load_dict(path)
-    @dict_list << File.open(path).gets.chomp until File.open(path).eof
-  end
-
-  def choose_secret_word(dict)
-    dict.select { |word| word.length > 4 && word.length < 13 }.sample.split('')
-  end
-
-  def print_word(word)
-    word.each do |letter|
-      if letter.nil?
-        print '_ '
-      else
-        print "#{letter} "
-      end
-    end
-  end
-end
-
-# As the name implies, the player
-class Player
-  attr_accessor :guesses, :word
-
-  def initialize(guesses = [], word = [])
-    @guesses = guesses
-    @word = word
+  def initialize_word_length
+    @secret_word.each { |_letter| @word << nil }
   end
 
   def ask_guess
@@ -80,32 +37,64 @@ class Player
     end
   end
 
-  def initialize_word_length(secret_word)
-    secret_word.each { |_letter| @word << nil }
+  def check_guess
+    guess = ask_guess
+    secret_word = @secret_word.clone
+    return mark_letter_positions(secret_word, guess) if secret_word.include?(guess)
+
+    nil
   end
 
-  def fill_blanks(letter_positions)
-    letter_positions&.each { |position| @word[position] = new_guess }
+  def mark_letter_positions(secret_word, guess)
+    positions = []
+    while secret_word.include?(guess)
+      positions << secret_word.index(guess)
+      secret_word[secret_word.index(guess)] = nil
+    end
+    positions
+  end
+
+  def fill_blanks
+    check_guess&.each { |position| @word[position] = new_guess }
+  end
+
+  def print_word(word)
+    word.each do |letter|
+      if letter.nil?
+        print '_ '
+      else
+        print "#{letter} "
+      end
+    end
   end
 end
 
-u = Utility.new('google-10000-english.txt')
-player = Player.new
-game = Hangman.new(u.secret_word)
+def load_dict(path)
+  dict_list = []
+  dict_list << File.open(path).gets.chomp until File.open(path).eof
+  dict_list
+end
 
-player.initialize_word_length(game.secret_word)
+def choose_secret_word(dict_list)
+  dict_list.select { |word| word.length > 4 && word.length < 13 }.sample.split('')
+end
+
+secret_word = choose_secret_word(load_dict('google-10000-english.txt'))
+game = Hangman.new(secret_word)
+
+game.initialize_word_length
 
 puts("Preparations are completed! Let\'s begin!\n")
 
 loop do
   puts("Remaining guesses: #{game.turns}\n\n")
 
-  u.print_word(player.word)
+  game.print_word(game.word)
 
-  player.fill_blanks(game.check_guess(player.ask_guess))
+  game.fill_blanks
 
-  if game.game_over?(player.word)
-    puts "\n#{player.word.join('').capitalize}"
+  if game.game_over?(game.word)
+    game.print_word(game.word).capitalize
     return puts "\nCongratulations! You won!"
   end
 
