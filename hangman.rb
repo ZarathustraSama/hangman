@@ -4,7 +4,7 @@ require 'pry-byebug'
 
 # The game logic
 class Hangman
-  attr_accessor :dict, :secret_word, :turns, :guesses, :word
+  attr_accessor :secret_word, :turns, :guesses, :word
 
   def initialize(secret_word, turns = 20, guesses = [], word = [])
     @secret_word = secret_word
