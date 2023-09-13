@@ -37,8 +37,7 @@ class Hangman
     end
   end
 
-  def check_guess
-    guess = ask_guess
+  def check_guess(guess)
     secret_word = @secret_word.clone
     return mark_letter_positions(secret_word, guess) if secret_word.include?(guess)
 
@@ -55,7 +54,9 @@ class Hangman
   end
 
   def fill_blanks
-    check_guess&.each { |position| @word[position] = new_guess }
+    new_guess = ask_guess
+    letter_positions = check_guess(new_guess)
+    letter_positions&.each { |position| @word[position] = new_guess }
   end
 
   def print_word
@@ -70,8 +71,9 @@ class Hangman
 end
 
 def load_dict(path)
+  dict_obj = File.open(path)
   dict_list = []
-  dict_list << File.open(path).gets.chomp until File.open(path).eof
+  dict_list << dict_obj.gets.chomp until dict_obj.eof
   dict_list
 end
 
