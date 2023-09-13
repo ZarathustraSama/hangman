@@ -29,11 +29,11 @@ class Hangman
     loop do
       puts("\n\nChoose a letter\n")
       new_guess = gets.chomp.downcase
-      unless @guesses.include?(new_guess)
+      if new_guess.length == 1 && new_guess.match(/[a-z]/) && !@guesses.include?(new_guess)
         @guesses << new_guess
         return new_guess
       end
-      puts("You've already chosen that letter!\n")
+      puts("Try again!\n")
     end
   end
 
@@ -97,7 +97,7 @@ loop do
 
   if game.game_over?(game.word)
     game.print_word.join('').capitalize
-    return puts "\nCongratulations! You won!"
+    return puts "\n\nCongratulations! You won!"
   end
 
   game.advance_turn
