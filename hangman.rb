@@ -1,14 +1,14 @@
 # frozen_string_literal: true
 
 require 'pry-byebug'
+
 # The main game
 class Hangman
   attr_accessor :dict, :secret_word, :turns, :guesses
 
-  def initialize(secret_word, turns = 20, guesses = [])
+  def initialize(secret_word, turns = 20)
     @secret_word = secret_word
     @turns = turns
-    @guesses = guesses
   end
 
   def advance_turn
@@ -35,15 +35,27 @@ end
 
 # Useful function(s) for the interaction between objects
 class Utility
+  def initialize(dict_path)
+    @dict_list = load_dict(dict_path)
+    @secret_word = choose_secret_word(@dict_list)
+  end
+
   def load_dict(path)
-    dict_obj = File.open(path)
-    dict_list = []
-    dict_list << dict_obj.gets.chomp until dict_obj.eof
-    dict_list
+    @dict_list << File.open(path).gets.chomp until File.open(path).eof
   end
 
   def choose_secret_word(dict)
     dict.select { |word| word.length > 4 && word.length < 13 }.sample.split('')
+  end
+
+  def print_word(word)
+    word.each do |letter|
+      if letter.nil?
+        print '_ '
+      else
+        print "#{letter} "
+      end
+    end
   end
 end
 
@@ -67,36 +79,33 @@ class Player
       puts("You've already chosen that letter!\n")
     end
   end
+
+  def initialize_word_length(secret_word)
+    secret_word.each { |_letter| @word << nil }
+  end
+
+  def fill_blanks(letter_positions)
+    letter_positions&.each { |position| @word[position] = new_guess }
+  end
 end
 
-u = Utility.new
+u = Utility.new('google-10000-english.txt')
 player = Player.new
+game = Hangman.new(u.secret_word)
 
-dict_path = 'google-10000-english.txt'
-dict_list = u.load_dict(dict_path)
-secret_word = u.choose_secret_word(dict_list)
-
-game = Hangman.new(secret_word)
-secret_word = game.secret_word
-word = player.word
-secret_word.each { |_letter| word << nil }
+player.initialize_word_length(game.secret_word)
 
 puts("Preparations are completed! Let\'s begin!\n")
 
 loop do
   puts("Remaining guesses: #{game.turns}\n\n")
-  word.each do |letter|
-    if letter.nil?
-      print '_ '
-    else
-      print "#{letter} "
-    end
-  end
-  new_guess = player.ask_guess
-  letter_positions = game.check_guess(new_guess)
-  letter_positions&.each { |position| word[position] = new_guess }
-  if game.game_over?(word)
-    puts "\n#{word.join('').capitalize}"
+
+  u.print_word(player.word)
+
+  player.fill_blanks(game.check_guess(player.ask_guess))
+
+  if game.game_over?(player.word)
+    puts "\n#{player.word.join('').capitalize}"
     return puts "\nCongratulations! You won!"
   end
 
