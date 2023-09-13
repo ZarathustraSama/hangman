@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'pry-byebug'
+require 'json'
 
 # The game logic
 class Hangman
@@ -81,10 +82,57 @@ def choose_secret_word(dict_list)
   dict_list.select { |word| word.length > 4 && word.length < 13 }.sample.split('')
 end
 
-secret_word = choose_secret_word(load_dict('google-10000-english.txt'))
-game = Hangman.new(secret_word)
+def dump_to_json(game)
+  JSON.dump({ secret_word: game.secret_word, turns: game.turns, guesses: game.guesses, word: game.word })
+end
 
-game.initialize_word_length
+def save_game(game)
+  filename = 'save_file'
+  game_data = dump_to_json(game)
+
+  File.open(filename, 'w') do |file|
+    file.puts game_data
+  end
+end
+
+def from_json(string)
+  data = JSON.parse string
+  Hangman.new(data['secret_word'], data['turns'], data['guesses'], data['word'])
+end
+
+def load_game(save_file)
+  game_data = File.open(save_file).gets.chomp
+  from_json(game_data)
+end
+
+def ask_save(game)
+  loop do
+    puts('Do you want to save your game? y/n')
+    answer = gets.chomp.downcase
+    save_game(game) if answer == 'y'
+    return if answer.include?('y' || 'n')
+
+    puts('Give a clear answer!')
+  end
+end
+
+def ask_load(save_file)
+  loop do
+    puts('Do you want to load your previous game? y/n')
+    answer = gets.chomp.downcase
+    return load_game(save_file) if answer == 'y'
+    return if answer == 'n'
+
+    puts('Give a clear answer!')
+  end
+end
+
+secret_word = choose_secret_word(load_dict('google-10000-english.txt'))
+game = ask_load('save_file') if File.exist?('save_file')
+
+game ||= Hangman.new(secret_word)
+
+game.initialize_word_length if game.word.empty?
 
 puts("Preparations are completed! Let\'s begin!\n")
 
@@ -102,4 +150,6 @@ loop do
 
   game.advance_turn
   return puts "\n The man has been hanged :(\n" if game.turns.zero?
+
+  ask_save(game)
 end
